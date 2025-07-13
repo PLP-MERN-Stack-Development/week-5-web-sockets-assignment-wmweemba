@@ -65,18 +65,3 @@ Place a `notification.mp3` file in the `client/public/` directory for sound noti
 - **Logout button**
 
 ---
-
-## 📸 Screenshots / GIFs
-
-> _Add screenshots or GIFs of the application below. Example:_
-
-![Chat Room Screenshot](./screenshots/chat-room.png)
-
-![Mobile View Screenshot](./screenshots/mobile-view.png)
-
-![Private Messaging GIF](./screenshots/private-messaging.gif)
-
----
-
-## 📄 License
-MIT
