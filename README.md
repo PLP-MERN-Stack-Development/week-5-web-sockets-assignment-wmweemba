@@ -1,78 +1,82 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=19921008&assignment_repo_type=AssignmentRepo)
-# Real-Time Chat Application with Socket.io
+# 🗨️ Real-Time Chat Application with Socket.io
 
-This assignment focuses on building a real-time chat application using Socket.io, implementing bidirectional communication between clients and server.
+## 🚀 Project Overview
+This project is a full-featured real-time chat application built with Node.js, Express, Socket.io, and React (Vite). It demonstrates bidirectional communication between clients and server, supporting live messaging, notifications, online status, private messaging, multiple chat rooms, file sharing, message reactions, and more. The app is optimized for both desktop and mobile devices and includes robust UX and performance features.
 
-## Assignment Overview
+## 🛠️ Setup Instructions
 
-You will build a chat application with the following features:
-1. Real-time messaging using Socket.io
-2. User authentication and presence
-3. Multiple chat rooms or private messaging
-4. Real-time notifications
-5. Advanced features like typing indicators and read receipts
+### Prerequisites
+- Node.js v18+ (https://nodejs.org/)
+- pnpm (https://pnpm.io/)
 
-## Project Structure
-
+### 1. Clone the repository
 ```
-socketio-chat/
-├── client/                 # React front-end
-│   ├── public/             # Static files
-│   ├── src/                # React source code
-│   │   ├── components/     # UI components
-│   │   ├── context/        # React context providers
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── pages/          # Page components
-│   │   ├── socket/         # Socket.io client setup
-│   │   └── App.jsx         # Main application component
-│   └── package.json        # Client dependencies
-├── server/                 # Node.js back-end
-│   ├── config/             # Configuration files
-│   ├── controllers/        # Socket event handlers
-│   ├── models/             # Data models
-│   ├── socket/             # Socket.io server setup
-│   ├── utils/              # Utility functions
-│   ├── server.js           # Main server file
-│   └── package.json        # Server dependencies
-└── README.md               # Project documentation
+git clone <your-repo-url>
+cd <your-repo-directory>
 ```
 
-## Getting Started
+### 2. Install dependencies
+#### Server
+```
+cd server
+pnpm install
+```
+#### Client
+```
+cd ../client
+pnpm install
+```
 
-1. Accept the GitHub Classroom assignment invitation
-2. Clone your personal repository that was created by GitHub Classroom
-3. Follow the setup instructions in the `Week5-Assignment.md` file
-4. Complete the tasks outlined in the assignment
+### 3. Start the development servers
+#### Server
+```
+pnpm run dev
+```
+#### Client
+```
+pnpm run dev
+```
 
-## Files Included
+- The client will run at http://localhost:5173 by default.
+- The server will run at http://localhost:5000 by default.
 
-- `Week5-Assignment.md`: Detailed assignment instructions
-- Starter code for both client and server:
-  - Basic project structure
-  - Socket.io configuration templates
-  - Sample components for the chat interface
+### 4. (Optional) Add Notification Sound
+Place a `notification.mp3` file in the `client/public/` directory for sound notifications.
 
-## Requirements
+---
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Modern web browser
-- Basic understanding of React and Express
+## ✨ Features Implemented
+- **Username-based authentication**
+- **Global chat room** for all users
+- **Multiple chat rooms/channels** (create, join, switch)
+- **Private messaging** between users
+- **Live messaging** with sender name and timestamp
+- **Typing indicators** (per room/private chat)
+- **Online/offline user status**
+- **File and image sharing** (inline images, download links for files)
+- **Message reactions** (like, love, laugh, wow, sad, party)
+- **Read receipts** (see who has read each message)
+- **Message delivery acknowledgment** (delivered checkmark)
+- **Real-time notifications** (unread counts, join/leave, sound, browser notifications)
+- **Message search** (filter messages in current chat)
+- **Message pagination** (load older messages)
+- **Robust reconnection logic**
+- **Responsive design** (works on desktop and mobile)
+- **Logout button**
 
-## Submission
+---
 
-Your work will be automatically submitted when you push to your GitHub Classroom repository. Make sure to:
+## 📸 Screenshots / GIFs
 
-1. Complete both the client and server portions of the application
-2. Implement the core chat functionality
-3. Add at least 3 advanced features
-4. Document your setup process and features in the README.md
-5. Include screenshots or GIFs of your working application
-6. Optional: Deploy your application and add the URLs to your README.md
+> _Add screenshots or GIFs of the application below. Example:_
 
-## Resources
+![Chat Room Screenshot](./screenshots/chat-room.png)
 
-- [Socket.io Documentation](https://socket.io/docs/v4/)
-- [React Documentation](https://react.dev/)
-- [Express.js Documentation](https://expressjs.com/)
-- [Building a Chat Application with Socket.io](https://socket.io/get-started/chat) 
+![Mobile View Screenshot](./screenshots/mobile-view.png)
+
+![Private Messaging GIF](./screenshots/private-messaging.gif)
+
+---
+
+## 📄 License
+MIT
