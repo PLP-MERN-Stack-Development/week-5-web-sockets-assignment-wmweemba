@@ -6,18 +6,18 @@ Build a real-time chat application using Socket.io that demonstrates bidirection
 ## 📂 Tasks
 
 ### Task 1: Project Setup
-- Set up a Node.js server with Express
-- Configure Socket.io on the server side
-- Create a React front-end application
-- Set up Socket.io client in the React app
-- Establish a basic connection between client and server
+- Set up a Node.js server with Express [x]
+- Configure Socket.io on the server side [x]
+- Create a React front-end application [x]
+- Set up Socket.io client in the React app [x]
+- Establish a basic connection between client and server [x]
 
 ### Task 2: Core Chat Functionality
-- Implement user authentication (simple username-based or JWT)
-- Create a global chat room where all users can send and receive messages
-- Display messages with sender's name and timestamp
-- Show typing indicators when a user is composing a message
-- Implement online/offline status for users
+- Implement user authentication (simple username-based or JWT) [x]
+- Create a global chat room where all users can send and receive messages [x]
+- Display messages with sender's name and timestamp [x]
+- Show typing indicators when a user is composing a message [x]
+- Implement online/offline status for users [x]
 
 ### Task 3: Advanced Chat Features
 - Create private messaging between users
