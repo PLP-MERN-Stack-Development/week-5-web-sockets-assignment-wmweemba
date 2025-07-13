@@ -40,3 +40,36 @@
 .read-the-docs {
   color: #888;
 }
+
+@media (max-width: 700px) {
+  .chat-container {
+    padding: 0.5rem;
+  }
+  .chat-box {
+    max-height: 250px !important;
+    font-size: 15px;
+    padding: 8px !important;
+  }
+  .chat-container > div {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .chat-container h1 {
+    font-size: 1.2rem;
+  }
+  .chat-container h3 {
+    font-size: 1rem;
+  }
+  .chat-container ul {
+    font-size: 15px;
+  }
+  .chat-container input[type="text"],
+  .chat-container input[type="file"] {
+    font-size: 15px;
+    padding: 4px;
+  }
+  .chat-container button {
+    font-size: 15px;
+    padding: 4px 8px;
+  }
+}

@@ -30,11 +30,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 const users = {};
 const messages = { global: [] }; // messages per room, default 'global'
 const typingUsers = {};
+const rooms = new Set(['global']);
+
+function broadcastRoomList() {
+  io.emit('room_list', Array.from(rooms));
+}
 
 // Helper: join room
 function joinRoom(socket, room) {
   socket.join(room);
   if (!messages[room]) messages[room] = [];
+  rooms.add(room);
+  broadcastRoomList();
 }
 
 // Socket.io connection handler
@@ -56,12 +63,33 @@ io.on('connection', (socket) => {
     socket.emit('room_joined', room);
     // Optionally send room message history
     socket.emit('room_messages', { room, messages: messages[room] || [] });
+    // System message for join
+    const joinMsg = {
+      id: Date.now(),
+      system: true,
+      message: `${users[socket.id]?.username} joined #${room}`,
+      timestamp: new Date().toISOString(),
+      room,
+    };
+    messages[room].push(joinMsg);
+    io.to(room).emit('receive_message', joinMsg);
+    broadcastRoomList();
   });
 
   // Handle leaving a room
   socket.on('leave_room', (room) => {
     socket.leave(room);
     socket.emit('room_left', room);
+    // System message for leave
+    const leaveMsg = {
+      id: Date.now(),
+      system: true,
+      message: `${users[socket.id]?.username} left #${room}`,
+      timestamp: new Date().toISOString(),
+      room,
+    };
+    messages[room].push(leaveMsg);
+    io.to(room).emit('receive_message', leaveMsg);
   });
 
   // Handle chat messages (now with room and file support)
@@ -80,6 +108,8 @@ io.on('connection', (socket) => {
     messages[room].push(msgObj);
     if (messages[room].length > 100) messages[room].shift();
     io.to(room).emit('receive_message', msgObj);
+    // Delivery acknowledgment
+    socket.emit('message_delivered', { messageId: msgObj.id });
   });
 
   // Handle typing indicator (per room or private chat)
@@ -116,6 +146,8 @@ io.on('connection', (socket) => {
     };
     socket.to(to).emit('private_message', messageData);
     socket.emit('private_message', messageData);
+    // Delivery acknowledgment
+    socket.emit('message_delivered', { messageId: messageData.id });
   });
 
   // Handle read receipts
@@ -182,13 +214,25 @@ io.on('connection', (socket) => {
 
 // API routes
 app.get('/api/messages', (req, res) => {
-  // Optionally support room param
+  // Support room, before, and limit params for pagination
   const room = req.query.room || 'global';
-  res.json(messages[room] || []);
+  const before = req.query.before ? Number(req.query.before) : null;
+  const limit = req.query.limit ? Number(req.query.limit) : 20;
+  let msgs = messages[room] || [];
+  if (before) {
+    msgs = msgs.filter(m => m.id < before);
+  }
+  msgs = msgs.slice(-limit);
+  res.json(msgs);
 });
 
 app.get('/api/users', (req, res) => {
   res.json(Object.values(users));
+});
+
+// Add an endpoint to get the room list (optional)
+app.get('/api/rooms', (req, res) => {
+  res.json(Array.from(rooms));
 });
 
 // Root route

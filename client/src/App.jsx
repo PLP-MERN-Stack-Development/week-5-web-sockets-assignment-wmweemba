@@ -15,8 +15,13 @@ function App() {
   const [newRoom, setNewRoom] = useState('');
   const typingTimeoutRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const { connect, isConnected, messages, sendMessage, sendPrivateMessage, typingUsers, setTyping, users, socket, markMessageRead, reactToMessage } = useSocket();
+  const { connect, isConnected, isReconnecting, messages, sendMessage, sendPrivateMessage, typingUsers, setTyping, users, socket, markMessageRead, reactToMessage } = useSocket();
   const [file, setFile] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [windowFocused, setWindowFocused] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [search, setSearch] = useState('');
 
   const REACTIONS = [
     { emoji: '👍', name: 'like' },
@@ -27,18 +32,24 @@ function App() {
     { emoji: '🎉', name: 'party' },
   ];
 
-  // Track messages per room
+  // Filter messages for current chat and search
   const filteredMessages = messages.filter(msg => {
+    let inChat = false;
     if (activeChat.type === 'room') {
-      return !msg.isPrivate && (msg.room === activeChat.room || (!msg.room && activeChat.room === 'global'));
+      inChat = !msg.isPrivate && (msg.room === activeChat.room || (!msg.room && activeChat.room === 'global'));
     } else if (activeChat.type === 'private') {
-      return (
+      inChat = (
         msg.isPrivate &&
         ((msg.sender === username && msg.senderId === activeChat.user.id) ||
           (msg.sender === activeChat.user.username && msg.senderId === socket.id))
       );
     }
-    return false;
+    if (!inChat) return false;
+    if (!search.trim()) return true;
+    return (
+      (msg.message && msg.message.toLowerCase().includes(search.toLowerCase())) ||
+      (msg.sender && msg.sender.toLowerCase().includes(search.toLowerCase()))
+    );
   });
 
   const handleLogin = (e) => {
@@ -98,7 +109,7 @@ function App() {
     if (!isTyping) {
       setIsTyping(true);
       if (activeChat.type === 'room') {
-        setTyping({ isTyping: true, room: activeChat.room });
+        setTyping({ isTyping: true, room: activeChat.room || 'global' });
       } else if (activeChat.type === 'private') {
         setTyping({ isTyping: true, room: `private_${[username, activeChat.user.username].sort().join('_')}` });
       }
@@ -109,7 +120,7 @@ function App() {
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       if (activeChat.type === 'room') {
-        setTyping({ isTyping: false, room: activeChat.room });
+        setTyping({ isTyping: false, room: activeChat.room || 'global' });
       } else if (activeChat.type === 'private') {
         setTyping({ isTyping: false, room: `private_${[username, activeChat.user.username].sort().join('_')}` });
       }
@@ -151,12 +162,24 @@ function App() {
     }
   };
 
-  // Handle room creation
+  // Sync rooms with server
+  useEffect(() => {
+    const handleRoomList = (roomList) => {
+      setRooms(roomList);
+    };
+    socket.on('room_list', handleRoomList);
+    // Request initial room list
+    fetch('/api/rooms').then(res => res.json()).then(roomList => setRooms(roomList));
+    return () => {
+      socket.off('room_list', handleRoomList);
+    };
+  }, [socket]);
+
+  // Remove local room creation logic (handled by server now)
   const handleCreateRoom = (e) => {
     e.preventDefault();
     const room = newRoom.trim();
     if (room && !rooms.includes(room)) {
-      setRooms([...rooms, room]);
       setActiveChat({ type: 'room', room });
       socket.emit('join_room', room);
       setNewRoom('');
@@ -181,6 +204,126 @@ function App() {
     });
   }, [filteredMessages, username, markMessageRead]);
 
+  // Track unread messages per chat
+  useEffect(() => {
+    if (!windowFocused) return;
+    setUnreadCounts((prev) => {
+      const updated = { ...prev };
+      if (activeChat.type === 'room') {
+        updated[`room:${activeChat.room}`] = 0;
+      } else if (activeChat.type === 'private') {
+        updated[`private:${activeChat.user.id}`] = 0;
+      }
+      return updated;
+    });
+  }, [filteredMessages, activeChat, windowFocused]);
+
+  useEffect(() => {
+    const handleMessage = (msg) => {
+      // Only count if not in the active chat
+      if (msg.system) return;
+      if (activeChat.type === 'room' && msg.room === activeChat.room && !msg.isPrivate) return;
+      if (activeChat.type === 'private' && msg.isPrivate && msg.senderId === activeChat.user.id) return;
+      // Increment unread count
+      setUnreadCounts((prev) => {
+        const key = msg.isPrivate ? `private:${msg.senderId}` : `room:${msg.room || 'global'}`;
+        return { ...prev, [key]: (prev[key] || 0) + 1 };
+      });
+    };
+    // Listen for new messages
+    const unsub = socket.on('receive_message', handleMessage);
+    const unsub2 = socket.on('private_message', handleMessage);
+    return () => {
+      socket.off('receive_message', handleMessage);
+      socket.off('private_message', handleMessage);
+    };
+  }, [activeChat, socket]);
+
+  // Track window focus for notifications
+  useEffect(() => {
+    const onFocus = () => setWindowFocused(true);
+    const onBlur = () => setWindowFocused(false);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
+  // Sound notification
+  const playSound = () => {
+    const audio = new window.Audio('/notification.mp3');
+    audio.play();
+  };
+
+  // Browser notification
+  const showBrowserNotification = (msg) => {
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification(`New message from ${msg.sender || 'Chat'}`, {
+        body: msg.message || (msg.file ? msg.file.name : ''),
+        icon: '/vite.svg',
+      });
+    }
+  };
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (window.Notification && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Play sound and show browser notification for new messages in inactive chats
+  useEffect(() => {
+    const handleNotify = (msg) => {
+      if (msg.system) return;
+      let isActive = false;
+      if (activeChat.type === 'room' && msg.room === activeChat.room && !msg.isPrivate) isActive = true;
+      if (activeChat.type === 'private' && msg.isPrivate && msg.senderId === activeChat.user.id) isActive = true;
+      if (!isActive || !windowFocused) {
+        playSound();
+        showBrowserNotification(msg);
+      }
+    };
+    socket.on('receive_message', handleNotify);
+    socket.on('private_message', handleNotify);
+    return () => {
+      socket.off('receive_message', handleNotify);
+      socket.off('private_message', handleNotify);
+    };
+  }, [activeChat, windowFocused, socket]);
+
+  // Fetch older messages for pagination
+  const loadOlderMessages = async () => {
+    if (!activeChat || loadingOlder) return;
+    setLoadingOlder(true);
+    const room = activeChat.type === 'room' ? activeChat.room : 'global';
+    const oldest = filteredMessages.length > 0 ? filteredMessages[0].id : undefined;
+    const res = await fetch(`/api/messages?room=${room}&before=${oldest}&limit=20`);
+    const older = await res.json();
+    if (older.length === 0) setHasMore(false);
+    else setHasMore(true);
+    // Prepend to messages (avoid duplicates)
+    if (older.length > 0) {
+      // Insert at the start of the messages array
+      // (Assume messages are sorted by id ascending)
+      // Only add if not already present
+      older.forEach(msg => {
+        if (!messages.find(m => m.id === msg.id)) {
+          messages.unshift(msg);
+        }
+      });
+    }
+    setLoadingOlder(false);
+  };
+
+  const handleLogout = () => {
+    setUsername('');
+    setShowModal(true);
+    socket.disconnect();
+  };
+
   return (
     <>
       {showModal && (
@@ -204,7 +347,8 @@ function App() {
       {!showModal && (
         <div className="chat-container">
           <h1>Welcome, {username}!</h1>
-          <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+          <button onClick={handleLogout} style={{ float: 'right', marginBottom: 8 }}>Logout</button>
+          <p>Status: {isConnected ? 'Connected' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}</p>
           <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
             <div style={{ minWidth: 220, textAlign: 'left' }}>
               <h3 style={{ margin: '8px 0' }}>Rooms</h3>
@@ -216,6 +360,9 @@ function App() {
                     onClick={() => handleSelectChat({ type: 'room', room })}
                   >
                     <span style={{ color: activeChat.type === 'room' && activeChat.room === room ? 'blue' : 'inherit' }}># {room}</span>
+                    {unreadCounts[`room:${room}`] > 0 && (
+                      <span style={{ background: 'red', color: 'white', borderRadius: 8, padding: '0 6px', fontSize: 12, marginLeft: 6 }}>{unreadCounts[`room:${room}`]}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -257,12 +404,27 @@ function App() {
                     <span>
                       {user.username} {user.username === username && '(You)'}
                     </span>
+                    {unreadCounts[`private:${user.id}`] > 0 && (
+                      <span style={{ background: 'red', color: 'white', borderRadius: 8, padding: '0 6px', fontSize: 12, marginLeft: 6 }}>{unreadCounts[`private:${user.id}`]}</span>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
             <div style={{ flex: 1 }}>
               <div className="chat-box" style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #ccc', padding: 16, marginBottom: 16 }}>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search messages..."
+                  style={{ width: '100%', marginBottom: 8, padding: 4 }}
+                />
+                {hasMore && (
+                  <button onClick={loadOlderMessages} disabled={loadingOlder} style={{ marginBottom: 8 }}>
+                    {loadingOlder ? 'Loading...' : 'Load older messages'}
+                  </button>
+                )}
                 {filteredMessages.map((msg) => (
                   <div key={msg.id} style={{ marginBottom: 8 }}>
                     {msg.system ? (
@@ -270,6 +432,9 @@ function App() {
                     ) : (
                       <>
                         <strong>{msg.sender || 'Anonymous'}</strong> <span style={{ color: '#aaa', fontSize: 12 }}>{new Date(msg.timestamp).toLocaleTimeString()}</span>: {msg.message}
+                        {msg.sender === username && msg.delivered && (
+                          <span title="Delivered" style={{ color: 'green', marginLeft: 4 }}>✔</span>
+                        )}
                         {msg.isPrivate && <span style={{ color: 'purple', fontSize: 12, marginLeft: 8 }}>(private)</span>}
                         {msg.room && msg.room !== 'global' && !msg.isPrivate && (
                           <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>[#{msg.room}]</span>

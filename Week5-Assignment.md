@@ -20,19 +20,19 @@ Build a real-time chat application using Socket.io that demonstrates bidirection
 - Implement online/offline status for users [x]
 
 ### Task 3: Advanced Chat Features
-- Create private messaging between users
-- Implement multiple chat rooms or channels
-- Add "user is typing" indicator
-- Enable file or image sharing
-- Implement read receipts for messages
-- Add message reactions (like, love, etc.)
+- Create private messaging between users [x]
+- Implement multiple chat rooms or channels [x]
+- Add "user is typing" indicator [x]
+- Enable file or image sharing [x]
+- Implement read receipts for messages [x]
+- Add message reactions (like, love, etc.) [x]
 
 ### Task 4: Real-Time Notifications
-- Send notifications when a user receives a new message
-- Notify when a user joins or leaves a chat room
-- Display unread message count
-- Implement sound notifications for new messages
-- Add browser notifications (using the Web Notifications API)
+- Send notifications when a user receives a new message [x]
+- Notify when a user joins or leaves a chat room [x]
+- Display unread message count [x]
+- Implement sound notifications for new messages [x]
+- Add browser notifications (using the Web Notifications API) [x]
 
 ### Task 5: Performance and UX Optimization
 - Implement message pagination for loading older messages

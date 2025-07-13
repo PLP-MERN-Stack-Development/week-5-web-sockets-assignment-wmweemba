@@ -10,13 +10,15 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10,
   reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
 });
 
 // Custom hook for using socket.io
 export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [lastMessage, setLastMessage] = useState(null);
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
@@ -66,10 +68,15 @@ export const useSocket = () => {
     // Connection events
     const onConnect = () => {
       setIsConnected(true);
+      setIsReconnecting(false);
     };
 
     const onDisconnect = () => {
       setIsConnected(false);
+    };
+
+    const onReconnectAttempt = () => {
+      setIsReconnecting(true);
     };
 
     // Message events
@@ -137,9 +144,17 @@ export const useSocket = () => {
       ));
     };
 
+    // Delivery acknowledgment
+    const onMessageDelivered = ({ messageId }) => {
+      setMessages((prev) => prev.map(msg =>
+        msg.id === messageId ? { ...msg, delivered: true } : msg
+      ));
+    };
+
     // Register event listeners
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('reconnect_attempt', onReconnectAttempt);
     socket.on('receive_message', onReceiveMessage);
     socket.on('private_message', onPrivateMessage);
     socket.on('user_list', onUserList);
@@ -148,11 +163,13 @@ export const useSocket = () => {
     socket.on('typing_users', onTypingUsers);
     socket.on('message_read', onMessageRead);
     socket.on('message_reaction', onMessageReaction);
+    socket.on('message_delivered', onMessageDelivered);
 
     // Clean up event listeners
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      socket.off('reconnect_attempt', onReconnectAttempt);
       socket.off('receive_message', onReceiveMessage);
       socket.off('private_message', onPrivateMessage);
       socket.off('user_list', onUserList);
@@ -161,12 +178,14 @@ export const useSocket = () => {
       socket.off('typing_users', onTypingUsers);
       socket.off('message_read', onMessageRead);
       socket.off('message_reaction', onMessageReaction);
+      socket.off('message_delivered', onMessageDelivered);
     };
   }, []);
 
   return {
     socket,
     isConnected,
+    isReconnecting,
     lastMessage,
     messages,
     users,

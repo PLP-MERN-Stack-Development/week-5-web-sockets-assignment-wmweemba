@@ -53,3 +53,24 @@
 ## [0.3.5] - 2025-07-13
 ### Added
 - Added message reactions: users can react to messages with like, love, laugh, wow, sad, and party, and see reaction counts.
+
+## [0.3.6] - 2025-07-13
+### Added
+- Real-time unread message count for rooms and private chats, and system notifications when users join or leave a room.
+
+## [0.3.7] - 2025-07-13
+### Added
+- Sound and browser notifications for new messages in inactive chats, using the Web Notifications API and a notification sound.
+
+## [0.3.8] - 2025-07-13
+### Fixed
+- Room synchronization: rooms are now managed on the server and broadcast to all clients, so all users see and can join any created room in real time.
+
+## [0.3.9] - 2025-07-13
+### Added
+- Message pagination for loading older messages in chat rooms.
+- Robust reconnection logic and UI indicator for disconnections.
+- Message delivery acknowledgment with checkmark for delivered messages.
+- Message search bar to filter messages in the current chat.
+- Responsive design for mobile and desktop devices.
+- Logout button to log the user out and return to the login modal.
