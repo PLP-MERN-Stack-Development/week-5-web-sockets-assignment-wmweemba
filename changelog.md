@@ -29,3 +29,27 @@
 ## [0.2.3] - 2025-07-13
 ### Added
 - Implemented online/offline status for users by displaying a user list with online users in the chat UI.
+
+## [0.3.0] - 2025-07-13
+### Added
+- Implemented private messaging between users: users can select another user from the online list and send/receive private messages in a separate chat thread.
+
+## [0.3.1] - 2025-07-13
+### Added
+- Implemented multiple chat rooms/channels: users can create, join, and switch between rooms, and messages are sent/received per room.
+
+## [0.3.2] - 2025-07-13
+### Added
+- Enhanced typing indicator to work per room and per private chat, both on the client and server.
+
+## [0.3.3] - 2025-07-13
+### Added
+- Enabled file and image sharing in chat: users can upload and send files/images in rooms and private chats, with images displayed inline and other files as download links.
+
+## [0.3.4] - 2025-07-13
+### Added
+- Implemented read receipts: messages are marked as read when viewed, and a 'Read by' indicator is shown for each message.
+
+## [0.3.5] - 2025-07-13
+### Added
+- Added message reactions: users can react to messages with like, love, laugh, wow, sad, and party, and see reaction counts.
